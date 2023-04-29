@@ -41,7 +41,7 @@ messages = [
 ]
 conversation = []
 system_msg = "You are a test taking machine."
-openai.api_key = "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"
+openai.api_key = "APIKEY"
 
 #customize the GUI
 sg.theme("DarkGreen2")
