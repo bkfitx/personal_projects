@@ -5,3 +5,4 @@ CFFI==1.15.1
 pycparser==2.21
 sounddevice==0.4.6
 wavio==0.0.7
+pydub==0.25.1
