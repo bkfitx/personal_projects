@@ -1,3 +1,7 @@
 openai==0.27.2
 docx2txt==0.8
 PySimpleGUI==4.60.4
+CFFI==1.15.1
+pycparser==2.21
+sounddevice==0.4.6
+wavio==0.0.7
