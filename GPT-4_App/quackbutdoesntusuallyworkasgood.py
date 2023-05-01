@@ -10,6 +10,9 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 import wavio as wv
 from pydub import AudioSegment
+from dotenv import load_dotenv
+
+load_dotenv()
 
 ###CALL DALL-E API TO REQUEST PHOTOS
 def generate_dall_e_image(prompt):
@@ -54,18 +57,21 @@ messages = [
 ]
 conversation = []
 system_msg = "You are an AI."
-openai.api_key = "APIKEY"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
 #customize the GUI
 sg.theme("DarkGreen2")
 fontT = ("Arial", 20)
 fontB = ("Arial", 15)
 fontS = ("Arial", 10)
-duck_img = sg.Image('./duck.png', size=(200,100))
+folderlocation = os.path.dirname(os.path.realpath(__file__))
+duck_img = sg.Image(f'{folderlocation}/duckwaddle1.png', size=(200,200), enable_events=True, key="-DUCK-")
 mic_button = sg.Button("Audio Input", key="-RECORD-")
 send_button = sg.Button("Send")
 clear_button = sg.Button("Clear")
 quit_button = sg.Button("Quit")
+waddle_position = 0
 
 #define the layout of the GUI
 layout = [
@@ -91,16 +97,30 @@ while True:
     if event == "Quit" or event == sg.WIN_CLOSED:
         break
     
+
+    ###BUTTON EVENTS###
+
+    if event == "-DUCK-":
+        if waddle_position == 0:
+            waddle_position = 1
+            duck_img.update(filename=f'{folderlocation}\duckwaddle2.png')
+        elif waddle_position == 1:
+            waddle_position = 0
+            duck_img.update(filename=f'{folderlocation}\duckwaddle1.png')
+        
+
+
+
     if event == "-RECORD-":
         ## RECORD AUDIO and make it into a temporary .mp3 file
         freq = 44100
         duration = values["-SLIDER3-"]
         
         recording = sd.rec(int(duration * freq), samplerate=freq, channels=2)
-        #make a red circle to show that it is recording
         
+        duck_img.update(filename=f'{folderlocation}\duckspeak.png')
         sd.wait()
-        #make a green circle to show that it is done recording
+        duck_img.update(filename=f'{folderlocation}\duckwaddle1.png')
         
         write("output.wav", freq, recording)
         os.open("output.wav", os.O_RDONLY)
