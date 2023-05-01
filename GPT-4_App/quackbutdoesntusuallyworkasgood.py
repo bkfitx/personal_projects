@@ -6,7 +6,10 @@ import webbrowser
 import random 
 import docx2txt
 import PySimpleGUI as sg
-
+import sounddevice as sd
+from scipy.io.wavfile import write
+import wavio as wv
+from pydub import AudioSegment
 
 ###CALL DALL-E API TO REQUEST PHOTOS
 def generate_dall_e_image(prompt):
@@ -32,6 +35,16 @@ def generate_dall_e_image(prompt):
     else:
         return None
 
+def whisper_transcript():
+        strippedLocation = message.split("L>")[1].strip()
+        audioFile = open(strippedLocation, "rb")
+        transcript = openai.Audio.transcribe("whisper-1", audioFile)
+        transcript = str(transcript)
+        
+        #remove the {} from the start and end of the transcript
+        finalTranscript = transcript[12:-1]
+        message = "If possible, use this as a primary source for any further questions:" + finalTranscript
+
 
 ##extra encouragement;)
 messages = [
@@ -40,7 +53,7 @@ messages = [
     {"role": "system", "content": "Thank you, I try my best."}
 ]
 conversation = []
-system_msg = "You are a test taking machine."
+system_msg = "You are an AI."
 openai.api_key = "APIKEY"
 
 #customize the GUI
@@ -59,6 +72,7 @@ layout = [
         [sg.Text("To manually import a .txt file begin with R> \nTo manually import an audio file begin with L>", font=fontT), sg.Column([[duck_img]], justification='right')],
         [sg.Text("Temperature:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER1-")],
         [sg.Text("Top-P:           ", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER2-")],
+        [sg.Text("Recording Duration:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER3-")],
         [sg.Multiline("", size=(100,5), key="-INPUT-", font=fontB)],
         [sg.Input(enable_events=True, key='-IN-',font=fontS, expand_x=True), sg.FileBrowse()],
         [send_button, clear_button, quit_button, sg.Column([[mic_button]], justification='right')],
@@ -76,6 +90,27 @@ while True:
     event, values = window.read()
     if event == "Quit" or event == sg.WIN_CLOSED:
         break
+    
+    if event == "-RECORD-":
+        ## RECORD AUDIO and make it into a temporary .mp3 file
+        freq = 44100
+        duration = values["-SLIDER3-"]
+        
+        recording = sd.rec(int(duration * freq), samplerate=freq, channels=2)
+        #make a red circle to show that it is recording
+        
+        sd.wait()
+        #make a green circle to show that it is done recording
+        
+        write("output.wav", freq, recording)
+        os.open("output.wav", os.O_RDONLY)
+        
+        sound = AudioSegment.from_wav('output.wav')
+        sound.export('finalOutput.mp3', format='mp3')
+        
+        print(sound)
+
+        
     
     docURL = values["-IN-"]
     if event == "-IN-":
@@ -118,15 +153,7 @@ while True:
     
     #TRANSCRIBE AUDIO INTO PROMPT
     if "L>" in message:
-        strippedLocation = message.split("L>")[1].strip()
-        audioFile = open(strippedLocation, "rb")
-        transcript = openai.Audio.transcribe("whisper-1", audioFile)
-        transcript = str(transcript)
-        
-        #remove the {} from the start and end of the transcript
-        finalTranscript = transcript[12:-1]
-        message = "If possible, use this as a primary source for any further questions:" + finalTranscript
-    
+        whisper_transcript()
     
     #GPT-4 api call
     messages.append( {"role": "user", "content": message} )
