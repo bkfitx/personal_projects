@@ -13,6 +13,7 @@ from pydub import AudioSegment
 from dotenv import load_dotenv
 
 load_dotenv()
+terminalOutputs = []
 
 ###CALL DALL-E API TO REQUEST PHOTOS
 def generate_dall_e_image(prompt):
@@ -48,6 +49,24 @@ def whisper_transcript():
         finalTranscript = transcript[12:-1]
         message = "If possible, use this as a primary source for any further questions:" + finalTranscript
 
+def browse_textfiles():
+    sourceLocation = message.split("R>")[1].strip()
+    with open(sourceLocation) as file:
+        txtContent = file.read().replace('\n',' ')
+    message = "If possible, use this as a primary source for any further questions:" + txtContent
+
+def siriGPT():
+    freq = 44100
+    duration = recordingDurationSeconds
+    recording = sd.rec(int(duration * freq), samplerate=freq, channels=2)
+    duck_img.update(filename=f'{folderlocation}\duckspeak.png')
+    sd.wait()
+    duck_img.update(filename=f'{folderlocation}\duckwaddle1.png')
+    write("output.wav", freq, recording)
+    os.open("output.wav", os.O_RDONLY)
+    sound = AudioSegment.from_wav('output.wav')
+    sound.export('finalOutput.mp3', format='mp3')
+    print(sound)
 
 ##extra encouragement;)
 messages = [
@@ -65,24 +84,33 @@ sg.theme("DarkGreen2")
 fontT = ("Arial", 20)
 fontB = ("Arial", 15)
 fontS = ("Arial", 10)
+menu = [["Settings", ["Change Temperature", "Change Top-P", "Change Recording Duration", "Change API Key"]], ["Debug", ["Show Terminal"]]]
+title = sg.Text("To manually import a .txt file begin with R> \nTo manually import an audio file begin with L>", font=fontT)
 folderlocation = os.path.dirname(os.path.realpath(__file__))
-duck_img = sg.Image(f'{folderlocation}/duckwaddle1.png', size=(200,200), enable_events=True, key="-DUCK-")
+duck_img = sg.Image(f'{folderlocation}/duck.png', size=(130,130), enable_events=True, key="-DUCK-")
 mic_button = sg.Button("Audio Input", key="-RECORD-")
 send_button = sg.Button("Send")
 clear_button = sg.Button("Clear")
 quit_button = sg.Button("Quit")
+#tempSlider = sg.Text("Temperature:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER1-")
+#topPSlider = sg.Text("Top-P:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER2-")
+#recordingDuration = sg.Text("Recording Duration:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER3-")
+mainInput = sg.Multiline("", size=(100,5), key="-INPUT-", font=fontB)
+secondaryInput = sg.Input(enable_events=True, key='-IN-',font=fontS, expand_x=True), sg.FileBrowse()
+mainOutput = sg.Multiline("", size=(100,25), key="-OUTPUT-", font=fontB)
+TempAsk = 5
+TopPAsk = 5
 waddle_position = 0
 
+
 #define the layout of the GUI
-layout = [
-        [sg.Text("To manually import a .txt file begin with R> \nTo manually import an audio file begin with L>", font=fontT), sg.Column([[duck_img]], justification='right')],
-        [sg.Text("Temperature:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER1-")],
-        [sg.Text("Top-P:           ", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER2-")],
-        [sg.Text("Recording Duration:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER3-")],
-        [sg.Multiline("", size=(100,5), key="-INPUT-", font=fontB)],
-        [sg.Input(enable_events=True, key='-IN-',font=fontS, expand_x=True), sg.FileBrowse()],
+layout = [[sg.Menu(menu)],
+        [title, sg.Column([[duck_img]], justification='right')],
+        #[tempSlider, topPSlider, recordingDuration]
+        [mainInput],
+        [secondaryInput],
         [send_button, clear_button, quit_button, sg.Column([[mic_button]], justification='right')],
-        [sg.Multiline("", size=(100,25), key="-OUTPUT-", font=fontB)]
+        [mainOutput]
     ]
 
 
@@ -97,7 +125,40 @@ while True:
     if event == "Quit" or event == sg.WIN_CLOSED:
         break
     
-
+    while True: 
+        if event == "Change API Key":
+            APIASK = sg.popup_get_text("Please enter your API Key", title="API Key")
+            print("Key = ", APIASK)
+            if APIASK != None:
+                OPENAI_API_KEY = APIASK
+            break
+        elif event == "Show Terminal":
+            TerminalContent = '\n'.join(terminalOutputs)
+            TerminalPopup = sg.popup_scrolled(TerminalContent + "this doesnt work yet, please help", size=(100, 100), title="Terminal", font=fontS)
+            print("Terminal Opened")
+            break
+        elif event == "Change Temperature":
+            TempAsk = sg.popup_get_text("Enter Temperature value between 1-10", title="Temperature")
+            if TempAsk == None:
+                TempAsk = 5
+            print("Temperature Changed")
+            break
+        elif event == "Change Top-P":
+            TopPAsk = sg.popup_get_text("Enter Top-P value between 1-10", title="Top-P")
+            if TopPAsk == None:
+                TopPAsk = 5
+            print("Top-P Changed")
+            break
+        elif event == "Change Recording Duration":
+            RecordingDurationAsk = sg.popup_get_text("Enter Recording Duration ", title="Recording Duration")
+            if RecordingDurationAsk == None:
+                RecordingDurationAsk = 5
+            recordingDurationSeconds = RecordingDurationAsk
+            print("Recording Duration Changed")
+            break
+        else:
+            break
+            
     ###BUTTON EVENTS###
 
     if event == "-DUCK-":
@@ -113,22 +174,7 @@ while True:
 
     if event == "-RECORD-":
         ## RECORD AUDIO and make it into a temporary .mp3 file
-        freq = 44100
-        duration = values["-SLIDER3-"]
-        
-        recording = sd.rec(int(duration * freq), samplerate=freq, channels=2)
-        
-        duck_img.update(filename=f'{folderlocation}\duckspeak.png')
-        sd.wait()
-        duck_img.update(filename=f'{folderlocation}\duckwaddle1.png')
-        
-        write("output.wav", freq, recording)
-        os.open("output.wav", os.O_RDONLY)
-        
-        sound = AudioSegment.from_wav('output.wav')
-        sound.export('finalOutput.mp3', format='mp3')
-        
-        print(sound)
+        siriGPT()
 
         
     
@@ -159,43 +205,42 @@ while True:
         continue
     
     
-    temp = (values["-SLIDER1-"] * 0.1)
-    topP = (values["-SLIDER2-"] * 0.1)
+    temp = (float(TempAsk) * 0.1)
+    topP = (float(TopPAsk) * 0.1)
+
 
     #OPEN TEXT FILES
     if "R>" in message:
-        sourceLocation = message.split("R>")[1].strip()
-        extension = sourceLocation[len(sourceLocation)-5:]
-
-        with open(sourceLocation) as file:
-            txtContent = file.read().replace('\n',' ')
-        message = "If possible, use this as a primary source for any further questions:" + txtContent
-    
+        browse_textfiles()
     #TRANSCRIBE AUDIO INTO PROMPT
     if "L>" in message:
         whisper_transcript()
-    
-    #GPT-4 api call
-    messages.append( {"role": "user", "content": message} )
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=messages,
-        top_p=topP,
-        temperature=temp,
-        frequency_penalty=0.0,
-        presence_penalty=0.0 )
-    
-    reply = response["choices"][0]["message"]["content"]
-    messages.append({"role": "assistant", "content": reply})
-    print("\n" + reply + "\n")
-    
-    #output reply to GUI
-    conversation.append(reply)
-    conversationString = "\n \n".join(conversation)
 
-    window["-OUTPUT-"].update(conversationString)
-    window["-IN-"].update("")
+    if event == "Send":
+        print("start")
+        #GPT-4 api call
+        messages.append( {"role": "user", "content": message} )
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=messages,
+            top_p=topP,
+            temperature=temp,                                                   #Maybe make api call a while loop
+            frequency_penalty=0.0,                                              #to make it so it doesnt call when changing settings
+            presence_penalty=0.0 )
+
+        reply = response["choices"][0]["message"]["content"]
+        messages.append({"role": "assistant", "content": reply})
+        print("\n" + reply + "\n")
+        
+        #output reply to GUI
+        conversation.append(reply)
+        conversationString = "\n \n".join(conversation)
+
+        window["-OUTPUT-"].update(conversationString)
+        window["-IN-"].update("")
+        
     
+    """ remember to fix this later!!!
     #Create photo with DALL-E
     if "~" in reply:
         split_prompt = reply.split("~")[1].strip()
@@ -204,5 +249,5 @@ while True:
         #Open photo automatically
         if image_url != None:
             webbrowser.open(image_url)
-            
+    """
             
