@@ -217,7 +217,6 @@ while True:
         whisper_transcript()
 
     if event == "Send":
-        print("start")
         #GPT-4 api call
         messages.append( {"role": "user", "content": message} )
         response = openai.ChatCompletion.create(
@@ -238,6 +237,7 @@ while True:
 
         window["-OUTPUT-"].update(conversationString)
         window["-IN-"].update("")
+        window["-INPUT-"].update("")
         
     
     """ remember to fix this later!!!
