@@ -11,11 +11,34 @@ from scipy.io.wavfile import write
 import wavio as wv
 from pydub import AudioSegment
 from dotenv import load_dotenv
+from googlesearch import search
 
 load_dotenv()
 terminalOutputs = []
 
-###CALL DALL-E API TO REQUEST PHOTOS
+
+def sendAPICall():
+    messages.append( {"role": "user", "content": message} )
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=messages,
+        top_p=topP,
+        temperature=temp,                                                   
+        frequency_penalty=0.0,                                              
+        presence_penalty=0.0 )
+    
+    reply = response["choices"][0]["message"]["content"]
+    messages.append({"role": "assistant", "content": reply})
+    print("\n" + reply + "\n")
+    
+        #output reply to GUI
+    conversation.append(reply)
+    conversationString = "\n \n".join(conversation)
+
+    window["-OUTPUT-"].update(conversationString)
+    window["-IN-"].update("")
+    window["-INPUT-"].update("")
+
 def generate_dall_e_image(prompt):
     headers = {
         'Content-Type': 'application/json',
@@ -68,6 +91,25 @@ def siriGPT():
     sound.export('finalOutput.mp3', format='mp3')
     print(sound)
 
+def googleAPI(message, messages, conversation, topP, temp):
+    question = message
+    googleSearch = "whats a good google search to answer this question?" + question
+    messages.append( {"role": "user", "content": googleSearch} )
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=messages,
+        top_p=topP,
+        temperature=temp,                                                   
+        frequency_penalty=0.0,                                              
+        presence_penalty=0.0 )
+    
+    goodQuery = response["choices"][0]["message"]["content"]
+
+    query = goodQuery
+    for results in search(query, tld="co.in", num=10, stop=10, pause=2):
+        print(results)
+        conversation.append(results)
+        
 ##extra encouragement;)
 messages = [
     {"role": "system", "content": "Hello, what can I do for you today?"},
@@ -92,6 +134,7 @@ mic_button = sg.Button("Audio Input", key="-RECORD-")
 send_button = sg.Button("Send")
 clear_button = sg.Button("Clear")
 quit_button = sg.Button("Quit")
+internetsearch = sg.Checkbox("Access Internet (Uses way too many tokens and hardly works)", default=False, key="-SEARCH-")
 #tempSlider = sg.Text("Temperature:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER1-")
 #topPSlider = sg.Text("Top-P:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER2-")
 #recordingDuration = sg.Text("Recording Duration:", font=fontS), sg.Slider(range=(0, 10), default_value=5, orientation='h', size=(34, 10), font=fontS, key="-SLIDER3-")
@@ -101,6 +144,7 @@ mainOutput = sg.Multiline("", size=(100,25), key="-OUTPUT-", font=fontB)
 TempAsk = 5
 TopPAsk = 5
 waddle_position = 0
+results = ""
 
 
 #define the layout of the GUI
@@ -109,7 +153,7 @@ layout = [[sg.Menu(menu)],
         #[tempSlider, topPSlider, recordingDuration]
         [mainInput],
         [secondaryInput],
-        [send_button, clear_button, quit_button, sg.Column([[mic_button]], justification='right')],
+        [internetsearch, send_button, clear_button, quit_button, sg.Column([[mic_button]], justification='right')],
         [mainOutput]
     ]
 
@@ -131,6 +175,10 @@ while True:
             print("Key = ", APIASK)
             if APIASK != None:
                 OPENAI_API_KEY = APIASK
+            break
+        elif event == "-RECORD-":
+            ## RECORD AUDIO and make it into a temporary .mp3 file
+            siriGPT()
             break
         elif event == "Show Terminal":
             TerminalContent = '\n'.join(terminalOutputs)
@@ -159,24 +207,6 @@ while True:
         else:
             break
             
-    ###BUTTON EVENTS###
-
-    if event == "-DUCK-":
-        if waddle_position == 0:
-            waddle_position = 1
-            duck_img.update(filename=f'{folderlocation}\duckwaddle2.png')
-        elif waddle_position == 1:
-            waddle_position = 0
-            duck_img.update(filename=f'{folderlocation}\duckwaddle1.png')
-        
-
-
-
-    if event == "-RECORD-":
-        ## RECORD AUDIO and make it into a temporary .mp3 file
-        siriGPT()
-
-        
     
     docURL = values["-IN-"]
     if event == "-IN-":
@@ -208,6 +238,19 @@ while True:
     temp = (float(TempAsk) * 0.1)
     topP = (float(TopPAsk) * 0.1)
 
+    
+    
+    if values["-SEARCH-"] == True:
+        if event == "Send":
+            print("1")
+            message = "Whats a good google search to answer this question?: " + message
+        googleAPI()
+    
+    
+    
+    
+    
+    
 
     #OPEN TEXT FILES
     if "R>" in message:
@@ -217,27 +260,7 @@ while True:
         whisper_transcript()
 
     if event == "Send":
-        #GPT-4 api call
-        messages.append( {"role": "user", "content": message} )
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=messages,
-            top_p=topP,
-            temperature=temp,                                                   #Maybe make api call a while loop
-            frequency_penalty=0.0,                                              #to make it so it doesnt call when changing settings
-            presence_penalty=0.0 )
-
-        reply = response["choices"][0]["message"]["content"]
-        messages.append({"role": "assistant", "content": reply})
-        print("\n" + reply + "\n")
-        
-        #output reply to GUI
-        conversation.append(reply)
-        conversationString = "\n \n".join(conversation)
-
-        window["-OUTPUT-"].update(conversationString)
-        window["-IN-"].update("")
-        window["-INPUT-"].update("")
+        sendAPICall()
         
     
     """ remember to fix this later!!!
