@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Movie File</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input[type="file"] {
+            display: block;
+        }
+        .form-group button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .form-group button:disabled {
+            background-color: #ccc;
+        }
+        #progressContainer {
+            display: none;
+            margin-top: 20px;
+        }
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #submitButton {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Movie File</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="movieFile">Select a movie file to upload:</label>
+                <input type="file" id="movieFile" name="movieFile" accept="video/*" required>
+            </div>
+            <div class="form-group">
+                <button type="submit">Upload</button>
+            </div>
+        </form>
+        <div id="progressContainer">
+            <p>Uploading...</p>
+            <progress id="uploadProgress" value="0" max="100"></progress>
+        </div>
+        <div id="message"></div>
+        <button id="submitButton" onclick="handleSubmit()">Submit</button>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('movieFile');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const formData = new FormData();
+                formData.append('movieFile', file);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload', true);
+
+                xhr.upload.addEventListener('progress', function(event) {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        document.getElementById('uploadProgress').value = percentComplete;
+                        if (percentComplete === 100) {
+                            document.getElementById('submitButton').style.display = 'block';
+                        }
+                    }
+                });
+
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        document.getElementById('message').textContent = 'Upload successful!';
+                    } else {
+                        document.getElementById('message').textContent = 'Upload failed!';
+                    }
+                    document.getElementById('progressContainer').style.display = 'none';
+                });
+
+                xhr.addEventListener('error', function() {
+                    document.getElementById('message').textContent = 'Upload failed!';
+                    document.getElementById('progressContainer').style.display = 'none';
+                });
+
+                document.getElementById('progressContainer').style.display = 'block';
+                xhr.send(formData);
+            }
+        });
+
+        function handleSubmit() {
+            window.location.href = 'success.html'; // Redirect to a new page
+        }
+    </script>
+</body>
+</html>
+
