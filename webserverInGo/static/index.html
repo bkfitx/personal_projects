@@ -1,0 +1,83 @@
+<!-- AI generated example index page-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to My Fun HTTP Server</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            transition: background-color 0.5s;
+        }
+        h1 {
+            color: #ff6347;
+            margin-top: 50px;
+        }
+        p {
+            font-size: 1.2em;
+            color: #4682b4;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #fff;
+            background-color: #4682b4;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #5a9bd4;
+        }
+        .box {
+            width: 100px;
+            height: 100px;
+            background-color: #ff6347;
+            margin: 50px auto;
+            animation: move 2s infinite alternate;
+        }
+        @keyframes move {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(100px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to My Fun HTTP Server</h1>
+    <p>Click the button below to change the background color!</p>
+    <button onclick="changeBackgroundColor()">Change Background Color</button>
+    <div class="box"></div>
+    <div>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <a href="threejs/">Threejs cube</a>
+        <a href="raytracingjs/">Raytraced balls.</a>
+        <a href="cgpt/">idk</a>
+        <a href="movieUpload/">Movie Upload</a>
+    </div>
+    <script>
+        function changeBackgroundColor() {
+            const colors = ['#f0f8ff', '#faebd7', '#7fffd4', '#ffe4c4', '#ffebcd'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            document.body.style.backgroundColor = randomColor;
+        }
+    </script>
+</body>
+</html>
